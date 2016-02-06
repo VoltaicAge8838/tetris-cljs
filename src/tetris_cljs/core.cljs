@@ -1,6 +1,6 @@
-(ns tetris_cljs.core
-  (:require [tetris_cljs.graphics :as graphics]
-            [tetris_cljs.input :as input]))
+(ns tetris-cljs.core
+  (:require [tetris-cljs.graphics :as graphics]
+            [tetris-cljs.input :as input]))
 
 (enable-console-print!)
 

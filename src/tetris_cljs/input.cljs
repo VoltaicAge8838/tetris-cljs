@@ -36,12 +36,11 @@
   (let [key-code (.-keyCode e)]
     (do (when (prevent-default-keys key-code)
           (.preventDefault e))
-        (swap! input-state (update-state-fn :key-down key-code (.-timeStamp e)))
-        (println "key down " @input-state))))
+        (swap! input-state (update-state-fn :key-down key-code (.-timeStamp e))))))
+        ; (println "key down " @input-state))))
 
 (defn key-up [e]
-  (do (swap! input-state (update-state-fn :key-up (.-keyCode e) (.-timeStamp e)))
-      (println "key up " @input-state)))
+  (swap! input-state (update-state-fn :key-up (.-keyCode e) (.-timeStamp e))))
 
 (defn blur [e]
   (reset! input-state {:key-down {}, :key-up {}}))
@@ -53,10 +52,10 @@
   (update keyboard command-type dissoc key))
 
 (defn make-keyboard [timestamp keypresses]
-  { :timestamp timestamp,
+  { :last-update timestamp,
     :key-press keypresses})
 
-(defn get-new-keypress [last-timestamp]
+(defn get-new-keypresses [last-timestamp]
   (let [state @input-state]
     (->> state
       :key-down
@@ -65,6 +64,13 @@
                 (filter #(> (% 1) last-timestamp))
                 first)))
       (make-keyboard (:last-update state)))))
+
+; game-state = {:last-update, :key-bindings [fns]}
+(defn process-input [game-state]
+  (let [keypress-map (get-new-keypresses (:last-update game-state))]
+    (reduce #(when %2 (%2 %1))
+        (assoc game-state :last-update (:last-update keypress-map))
+        (map keypress-map #(get (:key-bindings game-state) %)))))
 
 (.addEventListener js/window "keydown" key-down)
 (.addEventListener js/window "keyup" key-up)

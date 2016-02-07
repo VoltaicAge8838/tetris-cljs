@@ -17,21 +17,24 @@
         (str (- newWidth 20) "px")))))
 
 (defn color [r g b a]
-  (str "rgb(" r "," g "," b "," a ")"))
+  (str "rgba(" r "," g "," b "," a ")"))
 
 (def red "rgb(200,0,0)")
 
 (def draw-type
-  { :rect [ #(.fillRect context %1 %2 %3 %4)
-            #(.strokeRect context %1 %2 %3 %4)]
-    :text [ #(.fillText context %1 %2 %3)
-            #(.strokeText context %1 %2 %3)]})
+  { :rect [ #(.strokeRect context %1 %2 %3 %4)
+            #(.fillRect context %1 %2 %3 %4)]
+    :text [ #(.strokeText context %1 %2 %3)
+            #(.fillText context %1 %2 %3)]})
+
+(defn cout [x]
+  (do (println x) x))
 
 (defn draw [type args fill-color stroke-color line-width]
   (do
     (.save context)
-    (aset context "fillStyle" fill-color)
-    (aset context "strokeStyle" stroke-color)
+    (aset context "fillStyle" (cout fill-color))
+    (aset context "strokeStyle" (cout stroke-color))
     (aset context "lineWidth" line-width)
     (aset context "font" "12px Arial")
     (doall (map #(apply % args) (type draw-type)))

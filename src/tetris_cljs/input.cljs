@@ -37,7 +37,6 @@
     (do (when (prevent-default-keys key-code)
           (.preventDefault e))
         (swap! input-state (update-state-fn :key-down key-code (.-timeStamp e))))))
-        ; (println "key down " @input-state))))
 
 (defn key-up [e]
   (swap! input-state (update-state-fn :key-up (.-keyCode e) (.-timeStamp e))))
@@ -55,6 +54,9 @@
   { :last-update timestamp,
     :key-press keypresses})
 
+(defn cout [t x]
+  (do (println t " debug: " x) x))
+
 (defn get-new-keypresses [last-timestamp]
   (let [state @input-state]
     (->> state
@@ -65,13 +67,17 @@
                 first)))
       (make-keyboard (:last-update state)))))
 
-; game-state = {:last-update, :key-bindings [fns]}
+; game-state = {:last-update, :key-bindings {code fns}}
 (defn process-input [game-state]
-  (let [keypress-map (get-new-keypresses (:last-update game-state))]
-    (reduce #(when %2 (%2 %1))
-        (assoc game-state :last-update (:last-update keypress-map))
-        (map keypress-map #(get (:key-bindings game-state) %)))))
+  (let [keypress-map (get-new-keypresses (:last-update game-state))
+        new-game-state (assoc game-state :last-update (:last-update keypress-map))
+        bindings (filter identity (map #(get (:key-bindings game-state) %)
+                                      (:key-press keypress-map)))]
+    (reduce #(if %2 (%2 %1) %1)
+        new-game-state
+        ((apply comp bindings) game-state))))
 
-(.addEventListener js/window "keydown" key-down)
-(.addEventListener js/window "keyup" key-up)
-(.addEventListener js/window "blur" blur)
+(defn init-key-listeners []
+  (.addEventListener js/window "keydown" key-down)
+  (.addEventListener js/window "keyup" key-up)
+  (.addEventListener js/window "blur" blur))

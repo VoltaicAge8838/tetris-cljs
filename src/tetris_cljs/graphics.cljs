@@ -16,20 +16,11 @@
         "100%"
         (str (- newWidth 20) "px")))))
 
-(defn color [r g b [a]]
+(defn color [r g b & [a]]
   (str "rgba(" r "," g "," b "," (or a "1") ")"))
 
 (defn color-shadow [r g b]
   (color r g b "0.2"))
-
-(def colors-list
-  { :red [255 0 0]
-    :green [0 255 0]
-    :blue [0 0 255]
-    :yellow [255 255 0]
-    :cyan [0 255 255]
-    :violet [255 0 255]
-    :grey [200 200 200]})
 
 (def draw-type
   { :rect [ #(.strokeRect context %1 %2 %3 %4)

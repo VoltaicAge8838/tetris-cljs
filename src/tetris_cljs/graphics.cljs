@@ -4,6 +4,18 @@
 
 (def context (.getContext canvas "2d"))
 
+(def colors-list
+  { :red [255 0 0]
+    :green [0 255 0]
+    :blue [0 0 255]
+    :yellow [255 255 0]
+    :cyan [0 255 255]
+    :violet [255 0 255]
+    :grey [200 200 200]})
+
+(defn random-color []
+  (rand-nth (vals colors-list)))
+
 (defn clear-canvas []
   (do (.save context)
       (.clearRect context)

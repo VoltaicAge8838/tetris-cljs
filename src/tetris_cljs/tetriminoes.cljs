@@ -33,12 +33,6 @@
         [[-1 0] [0 0] [1 0] [-1 -1]]
         [[0 1] [0 0] [1 -1] [0 -1]]]})
 
-; (def directions
-;   { :up [0 -1]
-;     :down [0 1]
-;     :left [-1 0]
-;     :right [1 0]})
-
 (defn random-pieces-list []
   (shuffle (vals piece-types)))
 
@@ -47,46 +41,43 @@
               (- (last base) (last n?))]]
     (#{[0 -1] [0 1] [-1 0] [1 0]} dif)))
 
-(defn to-neighbors-lists [coord-list]
+(defn compute-score [lines-cleared level]
+  (apply * 50 (+ level 1) (range 2 lines-cleared)))
+
+(defn make-blocks [coord-list color]
   (for [x coord-list]
     (for [y coord-list
           :let [dir (neighbor-direction x y)]
           :when dir]
-      dir)))
+      { :coord [x y]
+        :block {:group dir
+                :color color}})))
 
-(def colors-list
-  { :red [255 0 0]
-    :green [0 255 0]
-    :blue [0 0 255]
-    :yellow [255 255 0]
-    :cyan [0 255 255]
-    :violet [255 0 255]
-    :grey [200 200 200]})
+(defn make-piece [color type [rotation]]
+  (let [p-type (piece-types type)]
+    (->> p-type
+      count
+      (mod rotation)
+      p-type
+      make-blocks)))
 
-(defn random-color []
-  (rand-nth (vals colors-list)))
+(defn get-xy [x y block]
+  (-> block :coords (map + [x y])))
 
-(defn compute-score [lines-cleared level]
-  (apply * 50 (+ level 1) (range 2 lines-cleared)))
+(defn can-add-piece [grid x y piece]
+  (every?
+    #(get-in grid (get-xy x y %))
+    piece))
 
-(defn make-block [neighbors color]
-  { :group neighbors
-    :color color
-    :is-empty false})
+(defn place-piece [grid x y piece]
+  (when (can-add-piece grid x y piece)
+    (reduce
+      (fn [g block] (assoc-in g (get-xy x y block) (:block block)))
+      grid piece)))
 
-(defn make-piece [grid x y type & [rotation]]
-  (let [c (-> colors-list vals rand-nth)
-        p (type piece-types)
-        r (->> p count (mod rotation))
-        n (to-neighbors-lists (p r))]
-    (map #(make-block % c) n)))
+(def empty-block nil)
 
-(defn make-empty-block []
-  { :is-empty true})
-
-(defn make-border-block []
-  { :is-empty false
-    :color [0 0 0 0]})
+(def border-block {})
 
 (defn make-grid []
   (for [x (range tiles-wide)]
@@ -94,8 +85,8 @@
       (if (or (= x 0)
               (= x (- tiles-wide 1))
               (= y (- tiles-high 1)))
-        (make-border-block)
-        (make-empty-block)))))
+        border-block
+        empty-block))))
 
 (defn make-game-state [color-list width height x-offset y-offset]
   { :level 0

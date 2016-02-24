@@ -1,13 +1,19 @@
 (ns tetris-cljs.tetriminoes)
 
-(def tiles-wide 12)
-(def tiles-high 22)
+(def tiles-wide 10)
+(def tiles-high 20)
 
+(def new-grid
+  (repeat tiles-wide
+    (repeat tiles-high nil)))
+
+;; To do: remove absolute height, width, etc.
+;; these deal with graphics, not game logic
 (defn get-block-width [width]
-  (/ width (- tiles-wide 2)))
+  (/ width tiles-wide))
 
 (defn get-block-height [height]
-  (/ height (- tiles-high 2)))
+  (/ height tiles-high))
 
 (defn get-level-speed [lvl]
   (* 900 (- 1 (/ lvl (+ 2 lvl)))))
@@ -74,19 +80,6 @@
     (reduce
       (fn [g block] (assoc-in g (get-xy x y block) (:block block)))
       grid piece)))
-
-(def empty-block nil)
-
-(def border-block {})
-
-(defn make-grid []
-  (for [x (range tiles-wide)]
-    (for [y (range tiles-high)]
-      (if (or (= x 0)
-              (= x (- tiles-wide 1))
-              (= y (- tiles-high 1)))
-        border-block
-        empty-block))))
 
 (defn make-game-state [color-list width height x-offset y-offset]
   { :level 0

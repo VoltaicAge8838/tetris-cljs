@@ -3,17 +3,9 @@
 (def tiles-wide 10)
 (def tiles-high 20)
 
-(def new-grid
-  (repeat tiles-wide
-    (repeat tiles-high nil)))
-
-;; To do: remove absolute height, width, etc.
-;; these deal with graphics, not game logic
-(defn get-block-width [width]
-  (/ width tiles-wide))
-
-(defn get-block-height [height]
-  (/ height tiles-high))
+(def empty-grid
+  (vec (repeat tiles-wide
+        (vec (repeat tiles-high {})))))
 
 (defn get-level-speed [lvl]
   (* 900 (- 1 (/ lvl (+ 2 lvl)))))
@@ -50,52 +42,58 @@
 (defn compute-score [lines-cleared level]
   (apply * 50 (+ level 1) (range 2 lines-cleared)))
 
-(defn make-blocks [coord-list color]
-  (for [x coord-list]
-    (for [y coord-list
-          :let [dir (neighbor-direction x y)]
-          :when dir]
-      { :coord [x y]
-        :block {:group dir
-                :color color}})))
+(defn piece->blocks [piece]
+  (let [color (:color piece)
+        coord-list (:coords piece)]
+    (for [x coord-list
+          :let [neighbors
+                (for [y coord-list
+                      :let [dir (neighbor-direction x y)]
+                      :when dir
+                      dir])]
+          { :neighbors neighbors
+            :color color}])))
 
-(defn make-piece [color type [rotation]]
+(defn make-active-piece [color type coords]
+  { :color color
+    :type type
+    :coords coords})
+
+(defn make-piece [color type & [rotation]]
   (let [p-type (piece-types type)]
     (->> p-type
       count
-      (mod rotation)
+      (mod (or rotation 0))
       p-type
-      make-blocks)))
+      (make-active-piece color type))))
 
 (defn get-xy [x y block]
   (-> block :coords (map + [x y])))
 
 (defn can-add-piece [grid x y piece]
   (every?
-    #(get-in grid (get-xy x y %))
+    #(= {} (get-in grid (get-xy x y %)))
     piece))
 
 (defn place-piece [grid x y piece]
-  (when (can-add-piece grid x y piece)
-    (reduce
-      (fn [g block] (assoc-in g (get-xy x y block) (:block block)))
-      grid piece)))
+  (reduce
+    (fn [g block] (assoc-in g (get-xy x y block) (:block block)))
+    grid piece))
 
-(defn make-game-state [color-list width height x-offset y-offset]
+(defn make-game-state [colors]
   { :level 0
     :score 0
     :mode :drop ;; modes: drop, cascade, clear, game-over, prompt-highscore
-    :lines-cleared 0
-    :grid (make-grid)
+    :grid empty-grid
+    :colors colors
     :piece-queue (random-pieces-list)
-    :active-block {}
-    :next-block {}
+    :active-block nil
+    :next-block nil
     :level-speed 1
     :time 0
+    :lines-cleared 0
     :level-lines-cleared 0
     :total-lines-cleared 0
     :clear-line-counter 0
-    :width width
-    :height height
     :hard-drop false
     :soft-drop false})

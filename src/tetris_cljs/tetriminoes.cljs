@@ -62,29 +62,50 @@
                       :let [dir (neighbor-direction x y)]
                       :when dir]
                   dir)]]
-      { :neighbors (apply hash-set (conj neighbors [0 -1]))
-        :color color})))
+      {:neighbors (apply hash-set (conj neighbors [0 -1]))
+       :color color})))
 
-(defn make-piece [color type]
-  { :color color
-    :blocks (piece-types type)})
+(defn make-piece [color type & [xy]]
+  {:color color
+   :blocks (piece-types type)
+   :xy (or xy [3 0])})
 
-(defn get-xy [x y piece]
-  (->> piece piece->coords (mapv #(mapv + [x y] %))))
+(defn get-xy [piece]
+  (->> piece piece->coords (mapv #(mapv + (:xy piece) %))))
 
-(defn can-add-piece [grid x y piece]
+(defn can-add-piece [grid piece]
   (every?
     #(= {} (get-in grid %))
-    (get-xy x y piece)))
+    (get-xy piece)))
 
-(defn place-piece [grid x y piece]
+(defn place-piece [grid piece]
   (reduce
     (fn [g cn] (assoc-in g (first cn) (last cn)))
-    grid (map vector (get-xy x y piece) (piece->neighbors piece))))
+    grid (map vector (get-xy piece) (piece->neighbors piece))))
 
 (defn rotate-right [piece]
-  (vec (apply (partial map vector)
-          (reverse piece))))
+  (update piece :block
+    #(vec (apply (partial map vector)
+            (reverse %)))))
+
+(defn rotate-left [piece]
+  (update piece :block
+    #(vec (reverse (apply (partial map vector) %)))))
+
+(defn move-piece [piece xy-dif]
+  (update piece :xy #(mapv + xy-dif %)))
+
+(defn clear-lines [grid]
+  (letfn [swap-xy [g] (apply (partial map vector) g)]
+    (->> grid
+         swap-xy
+         (mapv #(if (every? (partial not= {}) %)
+                  (vec (repeat {}))
+                  %))
+         swap-xy)))
+
+; remove links to "cleared" lower neighbors
+(defn cascade [grid])
 
 (defn make-game-state [colors]
   { :level 0
